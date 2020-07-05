@@ -23,7 +23,7 @@ namespace ServiceStackNuxt
         {
             services.AddSingleton<IDbConnectionFactory>(new OrmLiteConnectionFactory(
                 Configuration.GetConnectionString("DefaultConnection") 
-                    ?? ":memory:",
+                    ?? "northwind.sqlite",
                 SqliteDialect.Provider));
         }
 
