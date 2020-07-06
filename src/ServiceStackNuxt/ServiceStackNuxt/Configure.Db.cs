@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ServiceStack;
@@ -22,14 +23,23 @@ namespace ServiceStackNuxt
         public void Configure(IServiceCollection services)
         {
             services.AddSingleton<IDbConnectionFactory>(new OrmLiteConnectionFactory(
-                Configuration.GetConnectionString("DefaultConnection") 
+                Configuration.GetConnectionString("DefaultConnection")
                     ?? "northwind.sqlite",
                 SqliteDialect.Provider));
+
+            services.AddSingleton<ICrudEvents>(c =>
+                new OrmLiteCrudEvents(c.Resolve<IDbConnectionFactory>()) {
+                    // NamedConnections = { SystemDatabases.Reporting }
+                });
+
+            OrmLiteConfig.BeforeExecFilter = dbCmd => Console.WriteLine(dbCmd.GetDebugString());
         }
 
         public void Configure(IAppHost appHost)
         {
             appHost.GetPlugin<SharpPagesFeature>()?.ScriptMethods.Add(new DbScriptsAsync());
+
+            appHost.Resolve<ICrudEvents>().InitSchema();
 
             using (var db = appHost.Resolve<IDbConnectionFactory>().Open())
             {
@@ -39,5 +49,5 @@ namespace ServiceStackNuxt
                 }
             }
         }
-    }    
+    }
 }
